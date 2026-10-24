@@ -1,0 +1,48 @@
+name: Dart mutation testing
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: The Flutter project's or pub workspace's directory, relative to the repository root.
+        type: string
+        default: .
+      paths:
+        description: The Dart packages to mutate, separated by spaces, relative to the working directory.
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  mutation:
+    name: Dart mutation testing
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-dart-mutation-${{ inputs.working-directory }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: ${{ inputs.working-directory }}/pubspec.yaml
+          cache: true
+      - name: Install
+        run: flutter pub get --enforce-lockfile
+      - name: Mutation
+        env:
+          MUTATION_PATHS: ${{ inputs.paths }}
+        run: |
+          [ -n "$MUTATION_PATHS" ] || { echo "::error::The paths input names no package to mutate."; exit 1; }
+          for path in $MUTATION_PATHS; do
+            report="$RUNNER_TEMP/mutation/$path"
+            (cd "$path" && dart run mutation_test --format junit --output "$report") || { grep -h -A3 '^File:' "$report"/*.xml; exit 1; }
+          done
