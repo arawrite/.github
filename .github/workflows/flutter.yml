@@ -1,0 +1,65 @@
+name: Flutter checks
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: The Flutter project's or pub workspace's directory, relative to the repository root.
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Flutter checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-flutter-${{ inputs.working-directory }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          flutter-version-file: ${{ inputs.working-directory }}/pubspec.yaml
+          cache: true
+      - name: Install
+        id: install
+        run: flutter pub get --enforce-lockfile
+      - name: Format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: flutter analyze --fatal-infos
+      - name: Tests
+        id: tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          while read -r name path; do
+            [ -d "$path/lib" ] || continue
+            mkdir -p "$path/test"
+            grep -rL --include='*.dart' '^part of' "$path/lib" | sed "s|^$path/lib/\(.*\)|import 'package:$name/\1';|" > "$path/test/all_libraries_test.dart"
+            echo 'void main() {}' >> "$path/test/all_libraries_test.dart"
+            (cd "$path" && flutter test --run-skipped --branch-coverage --coverage-path "$RUNNER_TEMP/coverage/$name.info")
+          done < <(dart pub workspace list --json | jq -r '.packages[] | "\(.name) \(.path)"')
+      - name: Coverage
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        run: |
+          cat "$RUNNER_TEMP"/coverage/*.info | awk -v gate=85 '
+            /^DA:/ { split(substr($0, 4), record, ","); lines++; lines_hit += record[2] > 0 }
+            /^BRDA:/ { split(substr($0, 6), record, ","); branches++; branches_hit += record[4] != "-" && record[4] > 0 }
+            END {
+              line_rate = lines ? 100 * lines_hit / lines : 0
+              branch_rate = branches ? 100 * branches_hit / branches : 100
+              printf "Coverage: lines %.2f%% (%d of %d), branches %.2f%% (%d of %d); the gate is %d%%.\n", line_rate, lines_hit, lines, branch_rate, branches_hit, branches, gate
+              exit !(line_rate >= gate && branch_rate >= gate)
+            }' | tee -a "$GITHUB_STEP_SUMMARY"
