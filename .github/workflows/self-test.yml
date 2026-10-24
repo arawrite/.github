@@ -1,0 +1,85 @@
+name: Self-test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [good, bad, coverage-lines, coverage-branches]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/python.yml
+    with:
+      working-directory: tests/fixtures/python/${{ matrix.fixture }}
+
+  typescript:
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [good, bad, coverage-lines, coverage-branches]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/typescript.yml
+    with:
+      working-directory: tests/fixtures/typescript/${{ matrix.fixture }}
+
+  flutter:
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [good, bad, coverage-lines, coverage-branches]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/flutter.yml
+    with:
+      working-directory: tests/fixtures/flutter/${{ matrix.fixture }}
+
+  dart-mutation:
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture: [good, surviving-mutants]
+    permissions:
+      contents: read
+    uses: ./.github/workflows/dart-mutation.yml
+    with:
+      working-directory: tests/fixtures/flutter/${{ matrix.fixture }}
+      paths: packages/stars
+
+  outcomes:
+    name: Outcomes
+    needs: [python, typescript, flutter, dart-mutation]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Failed steps
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/attempts/$GITHUB_RUN_ATTEMPT/jobs" --paginate --jq '.jobs[] | select(.name | contains(" / "))' \
+            | jq -s 'map({key: (.name | capture("^(?<job>\\S+) \\((?<fixture>[^)]+)\\)") | "\(.job)/\(.fixture)"), value: {id, fails: [.steps[] | select(.conclusion == "failure") | .name]}}) | from_entries' > "$RUNNER_TEMP/jobs.json"
+          { echo '| Case | Failed steps |'; echo '|---|---|'; jq -r 'to_entries[] | "| \(.key) | \(.value.fails | join(", ")) |"' "$RUNNER_TEMP/jobs.json"; } >> "$GITHUB_STEP_SUMMARY"
+          diff <(jq -S 'map_values(.fails)' tests/expectations.json) <(jq -S 'map_values(.fails)' "$RUNNER_TEMP/jobs.json")
+      - name: Reports
+        if: ${{ !cancelled() }}
+        run: |
+          missing=0
+          while IFS=$'\t' read -r case id report; do
+            [ -f "$RUNNER_TEMP/$id.log" ] || gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" > "$RUNNER_TEMP/$id.log"
+            grep -qF -- "$report" "$RUNNER_TEMP/$id.log" || { echo "::error::$case never reported: $report"; missing=1; }
+          done < <(jq -r --slurpfile jobs "$RUNNER_TEMP/jobs.json" 'to_entries[] | .key as $case | .value.reports[] | [$case, $jobs[0][$case].id, .] | @tsv' tests/expectations.json)
+          exit "$missing"

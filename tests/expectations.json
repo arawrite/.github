@@ -1,0 +1,121 @@
+{
+  "python/good": {
+    "fails": [],
+    "reports": [
+      "Coverage: lines 100.00% (12 of 12), branches 100.00% (2 of 2); the gate is 85%."
+    ]
+  },
+  "python/bad": {
+    "fails": ["Format", "Lint", "Types", "Boundaries", "Tests"],
+    "reports": [
+      "1 file would be reformatted",
+      "FIX001 Line contains FIXME",
+      "FIX002 Line contains TODO",
+      "FIX003 Line contains XXX",
+      "FIX004 Line contains HACK",
+      "PGH003 Use specific rule codes when ignoring type issues",
+      "PGH004 Use specific rule codes when using `noqa`",
+      "TID251 `pytest.mark.skip` is banned",
+      "(reportReturnType)",
+      "(reportUnnecessaryTypeIgnoreComment)",
+      "Rules never import the report BROKEN",
+      "FAILED tests/test_failing.py::test_top_score_earns_four_stars"
+    ]
+  },
+  "python/coverage-lines": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 75.00% (12 of 16), branches 100.00% (2 of 2); the gate is 85%."
+    ]
+  },
+  "python/coverage-branches": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 100.00% (12 of 12), branches 50.00% (1 of 2); the gate is 85%."
+    ]
+  },
+  "typescript/good": {
+    "fails": [],
+    "reports": [
+      "Coverage: lines 100.00% (7 of 7), branches 100.00% (2 of 2); the gate is 85%."
+    ]
+  },
+  "typescript/bad": {
+    "fails": ["Format", "Lint", "Types", "Tests"],
+    "reports": [
+      "[warn] src/report/spacing.ts",
+      "Unexpected 'todo' comment",
+      "Unexpected 'fixme' comment",
+      "Unexpected 'hack' comment",
+      "Unexpected 'xxx' comment",
+      "@eslint-community/eslint-comments/require-description",
+      "@eslint-community/eslint-comments/no-unlimited-disable",
+      "Unused eslint-disable directive",
+      "@typescript-eslint/ban-ts-comment",
+      "vitest/no-disabled-tests",
+      "vitest/no-focused-tests",
+      "vitest/warn-todo",
+      "There is no policy allowing dependencies from elements of type \"rules\" to elements of type \"report\"",
+      "error TS2322",
+      "Unexpected .only modifier",
+      "earns four stars at the top score"
+    ]
+  },
+  "typescript/coverage-lines": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 77.78% (7 of 9), branches 100.00% (2 of 2); the gate is 85%."
+    ]
+  },
+  "typescript/coverage-branches": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 100.00% (7 of 7), branches 50.00% (1 of 2); the gate is 85%."
+    ]
+  },
+  "flutter/good": {
+    "fails": [],
+    "reports": [
+      "Coverage: lines 100.00% (7 of 7), branches 100.00% (6 of 6); the gate is 85%."
+    ]
+  },
+  "flutter/bad": {
+    "fails": ["Format", "Analyze", "Tests"],
+    "reports": [
+      "Changed packages/stars/lib/spacing.dart",
+      "return_of_invalid_type",
+      "depend_on_referenced_packages",
+      "TODO(someone): drop the notes",
+      "FIXME: the notes are wrong",
+      "HACK: the notes take a shortcut",
+      "avoid_print",
+      "unnecessary_ignore",
+      "invalid_use_of_do_not_submit_member",
+      "the top score earns four stars",
+      "a skipped test still runs"
+    ]
+  },
+  "flutter/coverage-lines": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 58.33% (7 of 12), branches 85.71% (6 of 7); the gate is 85%."
+    ]
+  },
+  "flutter/coverage-branches": {
+    "fails": ["Coverage"],
+    "reports": [
+      "Coverage: lines 100.00% (7 of 7), branches 83.33% (5 of 6); the gate is 85%."
+    ]
+  },
+  "dart-mutation/good": {
+    "fails": [],
+    "reports": ["Undetected Mutations: 0 (0.00%)"]
+  },
+  "dart-mutation/surviving-mutants": {
+    "fails": ["Mutation"],
+    "reports": [
+      "Undetected Mutations: 3 (60.00%)",
+      "Mutation:     _thresholds.where((threshold) => score > threshold).length;"
+    ]
+  }
+}
