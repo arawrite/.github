@@ -44,12 +44,12 @@ jobs:
         id: tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: |
-          while read -r name path; do
-            [ -d "$path/lib" ] || continue
-            mkdir -p "$path/test"
-            grep -rL --include='*.dart' '^part of' "$path/lib" | sed "s|^$path/lib/\(.*\)|import 'package:$name/\1';|" > "$path/test/all_libraries_test.dart"
-            echo 'void main() {}' >> "$path/test/all_libraries_test.dart"
-            (cd "$path" && flutter test --run-skipped --branch-coverage --coverage-path "$RUNNER_TEMP/coverage/$name.info")
+          while read -r name dir; do
+            [ -d "$dir/lib" ] || continue
+            mkdir -p "$dir/test"
+            find "$dir/lib" -name '*.dart' ! -exec grep -q '^part of' {} ';' -print | sed "s|^$dir/lib/\(.*\)|import 'package:$name/\1';|" > "$dir/test/all_libraries_test.dart"
+            echo 'void main() {}' >> "$dir/test/all_libraries_test.dart"
+            (cd "$dir" && flutter test --run-skipped --branch-coverage --coverage-path "$RUNNER_TEMP/coverage/$name.info")
           done < <(dart pub workspace list --json | jq -r '.packages[] | "\(.name) \(.path)"')
       - name: Coverage
         if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
