@@ -64,6 +64,9 @@ jobs:
       contents: read
     env:
       GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -79,7 +82,7 @@ jobs:
         run: |
           missing=0
           while IFS=$'\t' read -r case id report; do
-            [ -f "$RUNNER_TEMP/$id.log" ] || gh api "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" > "$RUNNER_TEMP/$id.log"
+            [ -f "$RUNNER_TEMP/$id.log" ] || gh api --allow-escape-sequences "repos/$GITHUB_REPOSITORY/actions/jobs/$id/logs" | sed 's/\x1b\[[0-9;]*m//g' > "$RUNNER_TEMP/$id.log"
             grep -qF -- "$report" "$RUNNER_TEMP/$id.log" || { echo "::error::$case never reported: $report"; missing=1; }
           done < <(jq -r --slurpfile jobs "$RUNNER_TEMP/jobs.json" 'to_entries[] | .key as $case | .value.reports[] | [$case, $jobs[0][$case].id, .] | @tsv' tests/expectations.json)
           exit "$missing"
