@@ -1,0 +1,1 @@
+{"root":["./src/report/label.ts","./src/report/report.test.ts","./src/report/report.ts","./src/report/summary.ts","./src/rules/stars.test.ts","./src/rules/stars.ts","./vitest.config.ts"],"version":"6.0.3"}

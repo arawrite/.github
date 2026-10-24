@@ -1,0 +1,35 @@
+{
+  "name": "stars",
+  "private": true,
+  "type": "module",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "26.8.2",
+      "onFail": "error"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": "11.19.1",
+      "onFail": "error"
+    }
+  },
+  "devDependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "4.8.1",
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.6.5",
+    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/eslint-plugin": "1.6.28",
+    "eslint": "10.13.0",
+    "eslint-import-resolver-typescript": "4.4.5",
+    "eslint-plugin-boundaries": "7.3.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
+  },
+  "allowScripts": {
+    "fsevents": false,
+    "unrs-resolver": false
+  }
+}
