@@ -1,0 +1,66 @@
+name: Python checks
+
+on:
+  workflow_call:
+    inputs:
+      working-directory:
+        description: The Python project's directory, relative to the repository root.
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Python checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}-python-${{ inputs.working-directory }}
+      cancel-in-progress: true
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      UV_LOCKED: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e
+        with:
+          working-directory: ${{ inputs.working-directory }}
+      - name: Install
+        id: install
+        run: uv sync
+      - name: Format
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run ruff format --check
+      - name: Lint
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run ruff check
+      - name: Types
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run pyright --warnings
+      - name: Boundaries
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run lint-imports
+      - name: Tests
+        id: tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: uv run coverage run --branch -m pytest
+      - name: Coverage
+        if: ${{ !cancelled() && steps.tests.outcome == 'success' }}
+        run: |
+          uv run coverage lcov -o "$RUNNER_TEMP/lcov.info"
+          awk -v gate=85 '
+            /^DA:/ { split(substr($0, 4), record, ","); lines++; lines_hit += record[2] > 0 }
+            /^BRDA:/ { split(substr($0, 6), record, ","); branches++; branches_hit += record[4] != "-" && record[4] > 0 }
+            END {
+              line_rate = lines ? 100 * lines_hit / lines : 0
+              branch_rate = branches ? 100 * branches_hit / branches : 100
+              printf "Coverage: lines %.2f%% (%d of %d), branches %.2f%% (%d of %d); the gate is %d%%.\n", line_rate, lines_hit, lines, branch_rate, branches_hit, branches, gate
+              exit !(line_rate >= gate && branch_rate >= gate)
+            }' "$RUNNER_TEMP/lcov.info" | tee -a "$GITHUB_STEP_SUMMARY"
