@@ -1,0 +1,10 @@
+.coverage
+.dart_tool/
+.import_linter_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+__pycache__/
+coverage/
+mutation-test-report/
+node_modules/
