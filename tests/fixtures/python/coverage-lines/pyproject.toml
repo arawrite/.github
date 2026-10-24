@@ -1,0 +1,55 @@
+[project]
+name = "stars"
+version = "1.0.0"
+requires-python = ">=3.14"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.17.0",
+    "import-linter>=2.15",
+    "pyright[nodejs]>=1.1.414",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+[tool.coverage.run]
+source_pkgs = ["stars"]
+
+[tool.importlinter]
+root_package = "stars"
+
+[[tool.importlinter.contracts]]
+name = "Rules never import the report"
+type = "layers"
+layers = ["stars.report", "stars.rules"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = "error"
+
+[tool.pytest]
+strict = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = ["COM812", "CPY", "D"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.importorskip".msg = "Every test runs."
+"pytest.mark.skip".msg = "Every test runs."
+"pytest.mark.skipif".msg = "Every test runs."
+"pytest.mark.xfail".msg = "Every test must pass."
+"pytest.skip".msg = "Every test runs."
+"pytest.xfail".msg = "Every test must pass."
+"unittest.expectedFailure".msg = "Every test must pass."
+"unittest.skip".msg = "Every test runs."
+"unittest.skipIf".msg = "Every test runs."
+"unittest.skipUnless".msg = "Every test runs."
