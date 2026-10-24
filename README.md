@@ -1,2 +1,3 @@
 # .github
-AraWrite organization profile and shared GitHub settings
+
+The AraWrite organization's public profile, in [`profile/README.md`](profile/README.md).
